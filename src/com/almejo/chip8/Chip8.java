@@ -104,6 +104,9 @@ public class Chip8 {
 			case 0xD000:
 				executeD000(opcode);
 				break;
+			case 0xF000:
+				executeF000(opcode);
+				break;
 			default:
 				System.out.println("Unknown opcode: " + Integer.toHexString(opcode));
 				throw new StopEmulationException();
@@ -141,6 +144,28 @@ public class Chip8 {
 		stack[sp] = pc;
 		++sp;
 		pc = getNNN(opcode);
+	}
+
+	private void executeF000(int opcode) {
+		switch (opcode & 0x00FF) {
+			case 0x0033:
+				System.out.println("[0xFX33]: NNN= " + getNNN(opcode) + " (" + formatedHex(getNNN(opcode)) + ")");
+				memory[I] = V[getX(opcode)] / 100;
+				memory[I + 1] = (V[getX(opcode)] / 10) % 10;
+				memory[I + 2] = (V[getX(opcode)] % 100) % 10;
+				pc += 2;
+				break;
+			case 0x0065:
+				System.out.println("[0xFX65]: X= " + getX(opcode) + " (" + formatedHex(getX(opcode)) + ")");
+				System.arraycopy(memory, I, V, 0, getX(opcode) + 1);
+				// On the original interpreter, when the operation is done, I = I + X + 1.
+				I += getX(opcode) + 1;
+				pc += 2;
+				break;
+			default:
+				System.out.println("Unknown opcode  [0xF000]: " + Integer.toHexString(opcode));
+				throw new StopEmulationException();
+		}
 	}
 
 	private void execute3000(int opcode) {
@@ -192,6 +217,9 @@ public class Chip8 {
 				break;
 			case 0x000E: // 0x00EE: Returns from subroutine
 				System.out.println(" [0x000E]: " + Integer.toHexString(opcode));
+				--sp;           // 16 levels of stack, decrease stack pointer to prevent overwrite
+				pc = stack[sp]; // Put the stored return address from the stack back into the program counter
+				pc += 2;        // Don't forget to increase the program counter!
 				break;
 			default:
 				System.out.println("Unknown opcode  [0x0000]: " + Integer.toHexString(opcode));
