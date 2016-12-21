@@ -1,24 +1,30 @@
 package com.almejo.chip8;
 
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.IOException;
 
-public class Emulator {
+public class Emulator implements KeyListener {
 	private Chip8 chip8 = new Chip8();
+	private JFrame frame;
+	private DisplayPane displayPane;
 
 	public static void main(String[] args) throws IOException {
 		new Emulator().run();
 	}
 
 	private void run() throws IOException {
-		setupGraphics();
 		setupInput();
 		setupSound();
 		chip8.initialize();
+		setupGraphics(chip8);
 		chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/pong.asm");
-		while (true) {
+		for (int i = 0; i < 7; i++) {
 			try {
 				chip8.emulateCycle();
-				chip8.drawGraphics();
+				drawGraphics();
 			} catch (StopEmulationException e) {
 				System.out.println("stopping emulation");
 				break;
@@ -26,12 +32,93 @@ public class Emulator {
 		}
 	}
 
-	private void setupGraphics() {
+	private void drawGraphics() {
+		if (chip8.isDrawFlag()) {
+			this.displayPane.repaint();
+			chip8.setDrawFlag(false);
+		}
+	}
+
+	private void setupGraphics(Chip8 chip8) {
+		frame = new JFrame("FrameDemo");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		displayPane = new DisplayPane(chip8);
+		frame.setContentPane(displayPane);
+		frame.setPreferredSize(new Dimension(500, 500));
+		frame.addKeyListener(this);
+		frame.pack();
+		frame.setVisible(true);
 	}
 
 	private void setupInput() {
 	}
 
 	private void setupSound() {
+	}
+
+	private class DisplayPane extends Container {
+		private final Chip8 chip8;
+
+		public DisplayPane(Chip8 chip8) {
+			this.chip8 = chip8;
+		}
+
+		@Override
+		public void paint(Graphics g) {
+			Graphics2D graphics2D = (Graphics2D) g;
+			graphics2D.setColor(Color.LIGHT_GRAY);
+			graphics2D.fillRect(0, 0, 64 * 20, 32 * 20);
+			int[] gfx = chip8.getGFX();
+			for (int y = 0; y < 32; y++) {
+				for (int x = 0; x < 64; x++) {
+					if (gfx[y * 64 + x] > 0) {
+						graphics2D.setColor(Color.WHITE);
+					} else {
+						graphics2D.setColor(Color.DARK_GRAY);
+					}
+					graphics2D.fillRect(x * 20, y * 20, 18, 18);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e) {
+
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e) {
+		char keyChar = e.getKeyChar();
+		updateKeyboard(keyChar, 1);
+	}
+
+	private void updateKeyboard(char keyChar, int value) {
+		if (keyChar == '1') chip8.setKey(0x1, value);
+		else if (keyChar == '2') chip8.setKey(0x2, value);
+		else if (keyChar == '3') chip8.setKey(0x3, value);
+		else if (keyChar == '4') chip8.setKey(0xC, value);
+
+		else if (keyChar == 'q') chip8.setKey(0x4, value);
+		else if (keyChar == 'w') chip8.setKey(0x5, value);
+		else if (keyChar == 'e') chip8.setKey(0x6, value);
+		else if (keyChar == 'r') chip8.setKey(0xD, value);
+
+		else if (keyChar == 'a') chip8.setKey(0x7, value);
+		else if (keyChar == 's') chip8.setKey(0x8, value);
+		else if (keyChar == 'd') chip8.setKey(0x9, value);
+		else if (keyChar == 'f') chip8.setKey(0xE, value);
+
+		else if (keyChar == 'z') chip8.setKey(0xA, value);
+		else if (keyChar == 'x') chip8.setKey(0x0, value);
+		else if (keyChar == 'c') chip8.setKey(0xB, value);
+		else if (keyChar == 'v') chip8.setKey(0xF, value);
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e) {
+		char keyChar = e.getKeyChar();
+		System.out.println("---------------------------------------> " + keyChar);
+		updateKeyboard(keyChar, 0);
 	}
 }
