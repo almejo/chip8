@@ -18,16 +18,24 @@ public class Emulator implements KeyListener {
 	private void run() throws IOException {
 		setupInput();
 		setupSound();
-		chip8.initialize();
+		chip8.initialize(true);
 		setupGraphics(chip8);
-		chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/pong.asm");
-		for (int i = 0; i < 7; i++) {
+		// chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/pong.asm");
+		chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/tetris.asm");
+		while (true) {
 			try {
+				long millis = System.currentTimeMillis();
 				chip8.emulateCycle();
 				drawGraphics();
+				long delta = System.currentTimeMillis() - millis;
+				if (delta < 2) {
+					Thread.sleep(2L - delta);
+				}
 			} catch (StopEmulationException e) {
 				System.out.println("stopping emulation");
 				break;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}
@@ -44,7 +52,7 @@ public class Emulator implements KeyListener {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		displayPane = new DisplayPane(chip8);
 		frame.setContentPane(displayPane);
-		frame.setPreferredSize(new Dimension(500, 500));
+		frame.setPreferredSize(new Dimension(650, 330));
 		frame.addKeyListener(this);
 		frame.pack();
 		frame.setVisible(true);
@@ -59,7 +67,7 @@ public class Emulator implements KeyListener {
 	private class DisplayPane extends Container {
 		private final Chip8 chip8;
 
-		public DisplayPane(Chip8 chip8) {
+		DisplayPane(Chip8 chip8) {
 			this.chip8 = chip8;
 		}
 
@@ -67,7 +75,11 @@ public class Emulator implements KeyListener {
 		public void paint(Graphics g) {
 			Graphics2D graphics2D = (Graphics2D) g;
 			graphics2D.setColor(Color.LIGHT_GRAY);
-			graphics2D.fillRect(0, 0, 64 * 20, 32 * 20);
+			int width = 10;
+			int fillWidth = 8;
+			int height = 10;
+			int fillEight = 8;
+			graphics2D.fillRect(0, 0, 64 * width, 32 * height);
 			int[] gfx = chip8.getGFX();
 			for (int y = 0; y < 32; y++) {
 				for (int x = 0; x < 64; x++) {
@@ -76,7 +88,7 @@ public class Emulator implements KeyListener {
 					} else {
 						graphics2D.setColor(Color.DARK_GRAY);
 					}
-					graphics2D.fillRect(x * 20, y * 20, 18, 18);
+					graphics2D.fillRect(x * width, y * height, fillWidth, fillEight);
 				}
 			}
 		}

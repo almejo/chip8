@@ -42,13 +42,15 @@ public class Chip8 {
 			0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 	};
 	private boolean drawFlag;
-	private int[] GFX;
+	private boolean debug;
 
 	void emulateCycle() {
 		int opcode = fetch();
 		decode(opcode);
 		updateTimers();
-		//printState();
+		if (debug) {
+		printState();
+		}
 	}
 
 	private void printState() {
@@ -57,7 +59,12 @@ public class Chip8 {
 		System.out.print("C=" + formattedHex(V[0xF]) + " ");
 		System.out.print(" [");
 		for (int i = 0; i < 0xF; i++) {
-			System.out.print(" " + i + ":" + formattedHex(V[i]));
+			System.out.print(" " + formattedHex(i) + ":" + formattedHex(V[i]));
+		}
+		System.out.print(" ]");
+		System.out.print(" [");
+		for (int i = 0; i < key.length; i++) {
+			System.out.print(" " + i + ":" + key[i]);
 		}
 		System.out.print(" ]");
 		System.out.println();
@@ -97,11 +104,11 @@ public class Chip8 {
 			case 0x6000:
 				execute6000(opcode);
 				break;
-			case 0x8000:
-				execute8000(opcode);
-				break;
 			case 0x7000:
 				execute7000(opcode);
+				break;
+			case 0x8000:
+				execute8000(opcode);
 				break;
 			case 0xA000:
 				executeA000(opcode);
@@ -125,12 +132,14 @@ public class Chip8 {
 	}
 
 	private void executeD000(int opcode) {
-//		System.out.println("[0xD000]:"
-//				+ " X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")"
-//				+ " Y= " + getY(opcode) + " (" + formattedHex(getY(opcode)) + ")"
-//				+ " N= " + getN(opcode) + " (" + formattedHex(getN(opcode)) + ")");
-		int x = getX(opcode);
-		int y = getY(opcode);
+		if (debug) {
+			System.out.println("[0xDXYN]:"
+					+ " X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")"
+					+ " Y= " + getY(opcode) + " (" + formattedHex(getY(opcode)) + ")"
+					+ " N= " + getN(opcode) + " (" + formattedHex(getN(opcode)) + ")");
+		}
+		int x = V[getX(opcode)];
+		int y = V[getY(opcode)];
 		int height = getN(opcode);
 		int pixel;
 
@@ -151,7 +160,9 @@ public class Chip8 {
 	}
 
 	private void execute2000(int opcode) {
-		//System.out.println("[0x2NNN]: NNN= " + getNNN(opcode) + " (" + formattedHex(getNNN(opcode)) + ")");
+		if (debug) {
+			System.out.println("[0x2NNN]: NNN= " + getNNN(opcode) + " (" + formattedHex(getNNN(opcode)) + ")");
+		}
 		stack[sp] = pc;
 		++sp;
 		pc = getNNN(opcode);
@@ -160,7 +171,9 @@ public class Chip8 {
 	private void executeE000(int opcode) {
 		switch (opcode & 0x00FF) {
 			case 0x00A1:
-				//System.out.println("[0xEXA1]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0xEXA1]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ") V" + getX(opcode) + "=" + V[getX(opcode)] + " key[VX]= " + key[V[getX(opcode)]]);
+				}
 				if (key[V[getX(opcode)]] == 0) {
 					pc += 4;
 				} else {
@@ -176,34 +189,53 @@ public class Chip8 {
 	private void executeF000(int opcode) {
 		switch (opcode & 0x00FF) {
 			case 0x0007: // FX07: Sets VX to the value of the delay timer.
-				//System.out.println("[0x0007]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0x0007]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				}
 				V[getX(opcode)] = delayTimer;
 				pc += 2;
 				break;
 			case 0x0015: // FX15: Sets the delay timer to VX.
-				//System.out.println("[0x0015]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0x0015]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				}
 				delayTimer = V[getX(opcode)];
 				pc += 2;
 				break;
+			case 0x001E: // FX1E: Adds VX to I
+				if (debug) {
+					System.out.println("[0x001E]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				}
+				I += V[getX(opcode)];
+				pc += 2;
+				break;
 			case 0x0018: // FX15: Sets the sound timer to VX.
-				//System.out.println("[0x0018]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0x0018]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				}
 				soundTimer = V[getX(opcode)];
 				pc += 2;
 				break;
 			case 0x0029: // FX29: Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font
-				//System.out.println("[0xFX29]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0xFX29]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				}
 				I = V[getX(opcode)] * 0x5;
 				pc += 2;
 				break;
 			case 0x0033:
-				//System.out.println("[0xFX33]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0xFX33]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				}
 				memory[I] = V[getX(opcode)] / 100;
 				memory[I + 1] = (V[getX(opcode)] / 10) % 10;
 				memory[I + 2] = (V[getX(opcode)] % 100) % 10;
 				pc += 2;
 				break;
 			case 0x0065:
-				//System.out.println("[0xFX65]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0xFX65]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")");
+				}
 				System.arraycopy(memory, I, V, 0, getX(opcode) + 1);
 				// On the original interpreter, when the operation is done, I = I + X + 1.
 				I += getX(opcode) + 1;
@@ -221,7 +253,9 @@ public class Chip8 {
 	 * @param opcode the operation code
 	 */
 	private void execute3000(int opcode) {
-		//System.out.println("[0x3XNN]: X= " + getX(opcode) + ", (" + formattedHex(getNN(opcode)) + ")");
+		if (debug) {
+			System.out.println("[0x3XNN]: X= " + getX(opcode) + ", (" + formattedHex(getNN(opcode)) + ")");
+		}
 		if (V[getX(opcode)] == getNN(opcode)) {
 			pc += 4;
 			return;
@@ -235,7 +269,9 @@ public class Chip8 {
 	 * @param opcode the operation code
 	 */
 	private void execute4000(int opcode) {
-		//System.out.println("[0x4XNN]: X= " + getX(opcode) + ", (" + formattedHex(getNN(opcode)) + ") NN= " + getNN(opcode) + ", (" + formattedHex(getNN(opcode)) + ")");
+		if (debug) {
+			System.out.println("[0x4XNN]: X= " + getX(opcode) + ", (" + formattedHex(getNN(opcode)) + ") NN= " + getNN(opcode) + ", (" + formattedHex(getNN(opcode)) + ")");
+		}
 		if (V[getX(opcode)] != getNN(opcode)) {
 			pc += 4;
 			return;
@@ -244,7 +280,9 @@ public class Chip8 {
 	}
 
 	private void execute7000(int opcode) {
-		//System.out.println("[0x7XNN]: X= " + getX(opcode) + ", NN= " + getNN(opcode));
+		if (debug) {
+			System.out.println("[0x7XNN]: X= " + getX(opcode) + ", NN= " + getNN(opcode));
+		}
 		updateSumOverflow(getNN(opcode), V[getX(opcode)]);
 		V[getX(opcode)] += getNN(opcode);
 		pc += 2;
@@ -257,25 +295,42 @@ public class Chip8 {
 	private void execute8000(int opcode) {
 		switch (opcode & 0x000F) {
 			case 0x0000:
-				//System.out.println("[0x8XY0]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ") Y= " + getY(opcode) + " (" + formattedHex(getY(opcode)) + ")");
+				if (debug) {
+					System.out.println("[0F8XY0]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ") Y= " + getY(opcode) + " (" + formattedHex(getY(opcode)) + ")");
+				}
 				V[getX(opcode)] = V[getY(opcode)];
 				pc += 2;
 				break;
 			case 0x0002:
-				//System.out.println("[0x8XY2]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ") Y= " + getY(opcode) + " (" + formattedHex(getY(opcode)) + ")");
-				V[getX(opcode)] = getX(opcode) & getY(opcode);
+				if (debug) {
+					System.out.println("[0x8XY2]: X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ") Y= " + getY(opcode) + " (" + formattedHex(getY(opcode)) + ")");
+				}
+				V[getX(opcode)] = V[getX(opcode)] & V[getY(opcode)];
 				pc += 2;
 				break;
 			case 0x0004:
-				//System.out.println("[0x8XY4]: X= " + getX(opcode) + ", Y= " + getY(opcode));
+				if (debug) {
+					System.out.println("[0x8XY4]: X= " + getX(opcode) + ", Y= " + getY(opcode));
+				}
 				updateSumOverflow(V[getY(opcode)], V[getX(opcode)]);
 				V[getX(opcode)] += V[getY(opcode)];
 				pc += 2;
 				break;
 			case 0x0005:
-				//System.out.println("[0x8XY5]: X= " + getX(opcode) + ", Y= " + getY(opcode));
+				if (debug) {
+					System.out.println("[0x8XY5]: X= " + getX(opcode) + ", Y= " + getY(opcode));
+				}
 				updateRestBorrow(opcode);
 				V[getX(opcode)] -= V[getY(opcode)];
+				pc += 2;
+				break;
+			case 0x000E:
+				if (debug) {
+					System.out.println("[0x8XYE]: X= " + getX(opcode));
+				}
+				V[0xF] = V[getX(opcode)] >> 7;
+				V[getX(opcode)] <<= 1;
+				V[getX(opcode)] = 0xFF & V[getX(opcode)];
 				pc += 2;
 				break;
 			default:
@@ -289,7 +344,9 @@ public class Chip8 {
 	}
 
 	private void execute6000(int opcode) {
-		//System.out.println("[0x6XNN]: X= " + getX(opcode) + ", NN= " + getNN(opcode));
+		if (debug) {
+			System.out.println("[0x6XNN]: X= " + getX(opcode) + ", NN= " + getNN(opcode));
+		}
 		V[getX(opcode)] = getNN(opcode);
 		pc += 2;
 	}
@@ -297,13 +354,17 @@ public class Chip8 {
 	private void execute0000(int opcode) {
 		switch (opcode & 0x000F) {
 			case 0x0000: // 0x00E0: Clears the screen
-				//System.out.println("[0x00E0]: " + Integer.toHexString(opcode));
+				if (debug) {
+					System.out.println("[0x00E0]: " + Integer.toHexString(opcode));
+				}
 				Arrays.fill(gfx, 0);
 				drawFlag = true;
 				pc += 2;
 				break;
 			case 0x000E: // 0x00EE: Returns from subroutine
-				//System.out.println(" [0x000E]: " + Integer.toHexString(opcode));
+				if (debug) {
+					System.out.println(" [0x000E]: " + Integer.toHexString(opcode));
+				}
 				--sp;           // 16 levels of stack, decrease stack pointer to prevent overwrite
 				pc = stack[sp]; // Put the stored return address from the stack back into the program counter
 				pc += 2;        // Don't forget to increase the program counter!
@@ -315,7 +376,9 @@ public class Chip8 {
 	}
 
 	private void execute1000(int opcode) {
-		//System.out.println("[0x1NNN]: NNN= " + getNNN(opcode));
+		if (debug) {
+			System.out.println("[0x1NNN]: NNN= " + getNNN(opcode));
+		}
 		pc = getNNN(opcode);
 	}
 
@@ -325,14 +388,18 @@ public class Chip8 {
 	 * @param opcode operation code
 	 */
 	private void executeA000(int opcode) {
-		//System.out.println("[0xANNN]: NNN= " + getNNN(opcode) + " (" + formattedHex(getNNN(opcode)) + ")");
+		if (debug) {
+			System.out.println("[0xANNN]: NNN= " + getNNN(opcode) + " (" + formattedHex(getNNN(opcode)) + ")");
+		}
 		I = getNNN(opcode);
 		pc += 2;
 	}
 
 	private void executeC000(int opcode) {
 		int random = new Random().nextInt(256) & getNN(opcode);
-		// System.out.println("[0xCXNN]: random=" + random + " X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")  NN= " + getNN(opcode) + " (" + formattedHex(getNN(opcode)) + ")");
+		if (debug) {
+			System.out.println("[0xCXNN]: random=" + random + " X= " + getX(opcode) + " (" + formattedHex(getX(opcode)) + ")  NN= " + getNN(opcode) + " (" + formattedHex(getNN(opcode)) + ")");
+		}
 		V[getX(opcode)] = random;
 		pc += 2;
 	}
@@ -361,7 +428,8 @@ public class Chip8 {
 		return (opcode & 0x0F00) >> 8;
 	}
 
-	void initialize() {
+	void initialize(boolean debug) {
+		this.debug = debug;
 		pc = 0x200;  // Program counter starts at 0x200
 		I = 0;       // Reset index register
 		sp = 0;      // Reset stack pointer
@@ -380,9 +448,17 @@ public class Chip8 {
 			String line = br.readLine();
 			int i = 0;
 			while (line != null) {
+				if (line.contains(";")) {
+					line = line.substring(0, line.indexOf(";"));
+				}
+				if (line.contains(":")) {
+					line = line.substring(line.indexOf(":") + 1);
+				}
+				line = line.trim();
+				System.out.println(line);
 				String[] words = line.split("\\s+");
 				for (String word : words) {
-					System.out.print(word + " ");
+					System.out.print("word: " + word + " ");
 					String first = "" + word.charAt(0) + word.charAt(1);
 					String second = "" + word.charAt(2) + word.charAt(3);
 
@@ -399,9 +475,9 @@ public class Chip8 {
 			}
 		}
 		System.out.println("\n*******************");
-		for (int i = 0x200 - 2; i < 840; i++) {
-			if (i % 0xF == 0) {
-				System.out.print("\n" + i + ": ");
+		for (int i = 0x200 - 2; i < 1450; i++) {
+			if (i % 0x2 == 0) {
+				System.out.print("\n0x" + formattedHex(i) + " - " + i + ": ");
 			}
 			System.out.print(formattedHex(memory[i]) + " ");
 		}
@@ -412,28 +488,25 @@ public class Chip8 {
 		return value > 0xF ? Integer.toHexString(value) : "0" + Integer.toHexString(value);
 	}
 
-//	void drawGraphics() {
-//		if (drawFlag) {
-//			System.out.println();
-//			for (int x = 0; x < 66; x++) {
-//				System.out.print("*");
-//			}
-//			System.out.println();
-//			for (int y = 0; y < 32; y++) {
-//				System.out.print("*");
-//				for (int x = 0; x < 64; x++) {
-//					System.out.print(gfx[y * 64 + x] > 0 ? "1" : " ");
-//				}
-//				System.out.print("*");
-//				System.out.println();
-//			}
-//			for (int x = 0; x < 66; x++) {
-//				System.out.print("*");
-//			}
-//			System.out.println();
-//			drawFlag = false;
-//		}
-//	}
+	void drawGraphics() {
+		System.out.println();
+		for (int x = 0; x < 66; x++) {
+			System.out.print("*");
+		}
+		System.out.println();
+		for (int y = 0; y < 32; y++) {
+			System.out.print("*");
+			for (int x = 0; x < 64; x++) {
+				System.out.print(gfx[y * 64 + x] > 0 ? "1" : " ");
+			}
+			System.out.print("*");
+			System.out.println();
+		}
+		for (int x = 0; x < 66; x++) {
+			System.out.print("*");
+		}
+		System.out.println();
+	}
 
 	int[] getGFX() {
 		return gfx;
