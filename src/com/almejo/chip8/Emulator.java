@@ -52,8 +52,9 @@ public class Emulator implements KeyListener {
 		frame = new JFrame("FrameDemo");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		displayPane = new DisplayPane(chip8);
-		frame.setContentPane(displayPane);
-		frame.setPreferredSize(new Dimension(650, 330));
+		frame.setLayout(new FlowLayout());
+		frame.add(displayPane);
+		frame.add(new DebuggerPanel(chip8));
 		frame.addKeyListener(this);
 		frame.pack();
 		frame.setVisible(true);
@@ -70,6 +71,7 @@ public class Emulator implements KeyListener {
 
 		DisplayPane(Chip8 chip8) {
 			this.chip8 = chip8;
+			setPreferredSize(new Dimension(650, 330));
 		}
 
 		@Override
@@ -133,5 +135,35 @@ public class Emulator implements KeyListener {
 		char keyChar = e.getKeyChar();
 		System.out.println("---------------------------------------> " + keyChar);
 		updateKeyboard(keyChar, 0);
+	}
+
+	private class DebuggerPanel extends JPanel implements Chip8StateChangeLisener {
+		JLabel[] registerLabel = new JLabel[16];
+
+		DebuggerPanel(Chip8 chip8) {
+			chip8.addStateChangedListener(this);
+			setLayout(new BorderLayout());
+			JPanel panel = new JPanel();
+			panel.setLayout(new FlowLayout());
+			add(panel, BorderLayout.NORTH);
+			for (int i = 0; i < registerLabel.length; i++) {
+				JPanel registerPanel = new JPanel();
+				registerPanel.setLayout(new BoxLayout(registerPanel, BoxLayout.Y_AXIS));
+				JLabel label = new JLabel("V" + i + ": ");
+				registerPanel.add(label);
+				registerLabel[i] = new JLabel();
+				registerLabel[i].setPreferredSize(new Dimension(25, 40));
+				registerPanel.add(registerLabel[i]);
+				panel.add(registerPanel);
+			}
+			setPreferredSize(new Dimension(800, 330));
+		}
+
+		@Override
+		public void onStateChanged(int[] V) {
+			for (int i = 0; i < V.length; i++) {
+				registerLabel[i].setText(V[i] + "");
+			}
+		}
 	}
 }

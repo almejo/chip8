@@ -9,6 +9,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
 public class Chip8 {
@@ -43,13 +45,14 @@ public class Chip8 {
 	};
 	private boolean drawFlag;
 	private boolean debug;
+	private List<Chip8StateChangeLisener> stateChangeLisenerList = new LinkedList<>();
 
 	void emulateCycle() {
 		int opcode = fetch();
 		decode(opcode);
 		updateTimers();
 		if (debug) {
-		printState();
+			printState();
 		}
 	}
 
@@ -129,6 +132,7 @@ public class Chip8 {
 				System.out.println("Unknown opcode: " + Integer.toHexString(opcode));
 				throw new StopEmulationException();
 		}
+		stateChanged();
 	}
 
 	private void executeD000(int opcode) {
@@ -522,5 +526,13 @@ public class Chip8 {
 
 	public void setKey(int key, int value) {
 		this.key[key] = value;
+	}
+
+	private void stateChanged() {
+		stateChangeLisenerList.stream().forEach(listener -> listener.onStateChanged(V));
+	}
+
+	public void addStateChangedListener(Chip8StateChangeLisener listener) {
+		stateChangeLisenerList.add(listener);
 	}
 }
