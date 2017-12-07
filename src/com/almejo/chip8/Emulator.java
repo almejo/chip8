@@ -20,8 +20,9 @@ public class Emulator implements KeyListener {
 		setupSound();
 		chip8.initialize(true);
 		setupGraphics(chip8);
-		// chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/pong.asm");
-		chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/tetris.asm");
+		chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/pong.asm");
+		// chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/tetris.asm");
+		// chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/invaders.asm");
 		while (true) {
 			try {
 				long millis = System.currentTimeMillis();
