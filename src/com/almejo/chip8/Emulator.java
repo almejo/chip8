@@ -10,6 +10,8 @@ public class Emulator implements KeyListener {
 	private Chip8 chip8 = new Chip8();
 	private JFrame frame;
 	private DisplayPane displayPane;
+	private Image offScreenImage = null;
+	private Graphics offScreenGraphics = null;
 
 	public static void main(String[] args) throws IOException {
 		new Emulator().run();
@@ -75,25 +77,31 @@ public class Emulator implements KeyListener {
 		}
 
 		@Override
-		public void paint(Graphics g) {
-			Graphics2D graphics2D = (Graphics2D) g;
-			graphics2D.setColor(Color.LIGHT_GRAY);
+		public void paint(Graphics graphics) {
+			final Dimension dimension = getSize();
+			if (offScreenImage == null) {
+				offScreenImage = createImage(dimension.width, dimension.height);
+			}
+			offScreenGraphics = offScreenImage.getGraphics();
+			offScreenGraphics.setColor(Color.LIGHT_GRAY);
 			int width = 10;
 			int fillWidth = 8;
 			int height = 10;
 			int fillEight = 8;
-			graphics2D.fillRect(0, 0, 64 * width, 32 * height);
+			offScreenGraphics.fillRect(0, 0, 64 * width, 32 * height);
 			int[] gfx = chip8.getGFX();
 			for (int y = 0; y < 32; y++) {
 				for (int x = 0; x < 64; x++) {
 					if (gfx[y * 64 + x] > 0) {
-						graphics2D.setColor(Color.WHITE);
+						offScreenGraphics.setColor(Color.WHITE);
 					} else {
-						graphics2D.setColor(Color.DARK_GRAY);
+						offScreenGraphics.setColor(Color.DARK_GRAY);
 					}
-					graphics2D.fillRect(x * width, y * height, fillWidth, fillEight);
+					offScreenGraphics.fillRect(x * width, y * height, fillWidth, fillEight);
 				}
 			}
+			Graphics2D graphics2D = (Graphics2D) graphics;
+			graphics2D.drawImage(offScreenImage, 0, 0, this);
 		}
 	}
 
