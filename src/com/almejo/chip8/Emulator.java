@@ -20,7 +20,6 @@ public class Emulator extends KeyAdapter {
 	private Chip8 chip8 = new Chip8();
 	private DisplayPane displayPane;
 	private Image offScreenImage = null;
-	private Graphics offScreenGraphics = null;
 
 	public static void main(String[] args) throws IOException {
 		new Emulator().run(args[0]);
@@ -85,20 +84,24 @@ public class Emulator extends KeyAdapter {
 
 		@Override
 		public void paint(Graphics graphics) {
-			final Dimension dimension = getSize();
+			Dimension dimension = getSize();
 			if (offScreenImage == null) {
 				offScreenImage = createImage(dimension.width, dimension.height);
 			}
-			offScreenGraphics = offScreenImage.getGraphics();
-			offScreenGraphics.setColor(Color.LIGHT_GRAY);
+			Graphics offScreenGraphics = offScreenImage.getGraphics();
+			offScreenGraphics.setColor(Color.BLACK);
+			offScreenGraphics.fillRect(0, 0, dimension.width,dimension.height);
+			offScreenGraphics.setColor(Color.WHITE);
 			int width = 10;
 			int fillWidth = 10;
 			int height = 10;
 			int fillHeight = 10;
+
 			for (int y = 0; y < 32; y++) {
 				for (int x = 0; x < 64; x++) {
-					offScreenGraphics.setColor(chip8.isPainted(x, y) ? Color.WHITE : Color.DARK_GRAY);
-					offScreenGraphics.fillRect(x * width, y * height, fillWidth, fillHeight);
+					if (chip8.isPainted(x, y) ) {
+						offScreenGraphics.fillRect(x * width, y * height, fillWidth, fillHeight);
+					}
 				}
 			}
 			Graphics2D graphics2D = (Graphics2D) graphics;
