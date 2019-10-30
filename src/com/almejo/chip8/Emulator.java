@@ -11,6 +11,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
@@ -18,6 +19,8 @@ import java.io.IOException;
 public class Emulator extends KeyAdapter {
 	private Chip8 chip8 = new Chip8();
 	private DisplayPane displayPane;
+	private Image offScreenImage = null;
+	private Graphics offScreenGraphics = null;
 
 	public static void main(String[] args) throws IOException {
 		new Emulator().run(args[0]);
@@ -72,7 +75,7 @@ public class Emulator extends KeyAdapter {
 	private void setupSound() {
 	}
 
-	private static class DisplayPane extends Container {
+	private class DisplayPane extends Container {
 		private final Chip8 chip8;
 
 		DisplayPane(Chip8 chip8) {
@@ -81,18 +84,25 @@ public class Emulator extends KeyAdapter {
 		}
 
 		@Override
-		public void paint(Graphics g) {
-			Graphics2D graphics2D = (Graphics2D) g;
+		public void paint(Graphics graphics) {
+			final Dimension dimension = getSize();
+			if (offScreenImage == null) {
+				offScreenImage = createImage(dimension.width, dimension.height);
+			}
+			offScreenGraphics = offScreenImage.getGraphics();
+			offScreenGraphics.setColor(Color.LIGHT_GRAY);
 			int width = 10;
 			int fillWidth = 10;
 			int height = 10;
 			int fillHeight = 10;
 			for (int y = 0; y < 32; y++) {
 				for (int x = 0; x < 64; x++) {
-					graphics2D.setColor(chip8.isPainted(x, y) ? Color.WHITE : Color.DARK_GRAY);
-					graphics2D.fillRect(x * width, y * height, fillWidth, fillHeight);
+					offScreenGraphics.setColor(chip8.isPainted(x, y) ? Color.WHITE : Color.DARK_GRAY);
+					offScreenGraphics.fillRect(x * width, y * height, fillWidth, fillHeight);
 				}
 			}
+			Graphics2D graphics2D = (Graphics2D) graphics;
+			graphics2D.drawImage(offScreenImage, 0, 0, this);
 		}
 	}
 
