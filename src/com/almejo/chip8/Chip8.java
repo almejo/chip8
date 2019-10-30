@@ -15,16 +15,16 @@ import java.util.Random;
 
 public class Chip8 {
 
-	private int memory[] = new int[4096];
-	private int V[] = new int[16];
+	private int[] memory = new int[4096];
+	private int[] V = new int[16];
 	private int I;
 	private int pc;
-	private int gfx[] = new int[64 * 32];
+	private int[] gfx = new int[64 * 32];
 	private int delayTimer;
 	private int soundTimer;
-	private int stack[] = new int[16];
+	private int[] stack = new int[16];
 	private int sp;
-	private int key[] = new int[16];
+	private int[] key = new int[16];
 	private int[] fonts = {
 			0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 			0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -152,8 +152,9 @@ public class Chip8 {
 			pixel = memory[I + yline];
 			for (int xline = 0; xline < 8; xline++) {
 				if ((pixel & (0x80 >> xline)) != 0) {
-					if (gfx[(x + xline + ((y + yline) * 64))] == 1)
+					if (gfx[(x + xline + ((y + yline) * 64))] == 1) {
 						V[0xF] = 1;
+					}
 					gfx[x + xline + ((y + yline) * 64)] ^= 1;
 				}
 			}
@@ -512,27 +513,26 @@ public class Chip8 {
 		System.out.println();
 	}
 
-	int[] getGFX() {
-		return gfx;
-	}
-
-	public boolean isDrawFlag() {
+	boolean isDrawFlag() {
 		return drawFlag;
 	}
-
-	public void setDrawFlag(boolean drawFlag) {
+	void setDrawFlag(boolean drawFlag) {
 		this.drawFlag = drawFlag;
 	}
 
-	public void setKey(int key, int value) {
+	void setKey(int key, int value) {
 		this.key[key] = value;
 	}
 
 	private void stateChanged() {
-		stateChangeLisenerList.stream().forEach(listener -> listener.onStateChanged(V));
+		stateChangeLisenerList.forEach(listener -> listener.onStateChanged(V));
 	}
 
-	public void addStateChangedListener(Chip8StateChangeLisener listener) {
+	void addStateChangedListener(Chip8StateChangeLisener listener) {
 		stateChangeLisenerList.add(listener);
+	}
+
+	boolean isPainted(int x, int y) {
+		return gfx[y * 64 + x] > 0;
 	}
 }

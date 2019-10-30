@@ -1,27 +1,34 @@
 package com.almejo.chip8;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BoxLayout;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.IOException;
 
-public class Emulator implements KeyListener {
+public class Emulator extends KeyAdapter {
 	private Chip8 chip8 = new Chip8();
-	private JFrame frame;
 	private DisplayPane displayPane;
 
 	public static void main(String[] args) throws IOException {
-		new Emulator().run();
+		new Emulator().run(args[0]);
 	}
 
-	private void run() throws IOException {
+	private void run(String filename) throws IOException {
 		setupInput();
 		setupSound();
 		chip8.initialize(true);
 		setupGraphics(chip8);
-		chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/pong.asm");
-		// chip8.loadProgram("/home/alejo/git/chip8/src/com/almejo/chip8/tetris.asm");
+		chip8.loadProgram(filename);
 		while (true) {
 			try {
 				long millis = System.currentTimeMillis();
@@ -48,7 +55,7 @@ public class Emulator implements KeyListener {
 	}
 
 	private void setupGraphics(Chip8 chip8) {
-		frame = new JFrame("FrameDemo");
+		JFrame frame = new JFrame("Chip 8 Emulator");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		displayPane = new DisplayPane(chip8);
 		frame.setLayout(new FlowLayout());
@@ -65,7 +72,7 @@ public class Emulator implements KeyListener {
 	private void setupSound() {
 	}
 
-	private class DisplayPane extends Container {
+	private static class DisplayPane extends Container {
 		private final Chip8 chip8;
 
 		DisplayPane(Chip8 chip8) {
@@ -76,29 +83,17 @@ public class Emulator implements KeyListener {
 		@Override
 		public void paint(Graphics g) {
 			Graphics2D graphics2D = (Graphics2D) g;
-			graphics2D.setColor(Color.LIGHT_GRAY);
 			int width = 10;
-			int fillWidth = 8;
+			int fillWidth = 10;
 			int height = 10;
-			int fillEight = 8;
-			graphics2D.fillRect(0, 0, 64 * width, 32 * height);
-			int[] gfx = chip8.getGFX();
+			int fillHeight = 10;
 			for (int y = 0; y < 32; y++) {
 				for (int x = 0; x < 64; x++) {
-					if (gfx[y * 64 + x] > 0) {
-						graphics2D.setColor(Color.WHITE);
-					} else {
-						graphics2D.setColor(Color.DARK_GRAY);
-					}
-					graphics2D.fillRect(x * width, y * height, fillWidth, fillEight);
+					graphics2D.setColor(chip8.isPainted(x, y) ? Color.WHITE : Color.DARK_GRAY);
+					graphics2D.fillRect(x * width, y * height, fillWidth, fillHeight);
 				}
 			}
 		}
-	}
-
-	@Override
-	public void keyTyped(KeyEvent e) {
-
 	}
 
 	@Override
@@ -136,7 +131,7 @@ public class Emulator implements KeyListener {
 		updateKeyboard(keyChar, 0);
 	}
 
-	private class DebuggerPanel extends JPanel implements Chip8StateChangeLisener {
+	private static class DebuggerPanel extends JPanel implements Chip8StateChangeLisener {
 		JLabel[] registerLabel = new JLabel[16];
 
 		DebuggerPanel(Chip8 chip8) {
